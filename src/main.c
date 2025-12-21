@@ -34,6 +34,10 @@ int main(int argc, char *argv[]) {
         printf("exit is a shell builtin\n");
         continue;
       }
+      else if (strcmp(second_word, "type") == 0){
+        printf("type is a shell builtin\n");
+        continue;
+      }
       else{
         printf("%s: not found\n", second_word);
         continue;
