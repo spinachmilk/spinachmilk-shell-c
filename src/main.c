@@ -23,6 +23,22 @@ int main(int argc, char *argv[]) {
       printf("%s\n", rest_of_string);
       continue;
     }
+    // type logic
+    if (strcmp(first_word, "type") == 0){
+      char *second_word = strtok(NULL, " ");
+      if (strcmp(second_word, "echo") == 0){
+        printf("echo is a shell builtin\n");
+        continue;
+      }
+      else if (strcmp(second_word, "exit") == 0){
+        printf("exit is a shell builtin\n");
+        continue;
+      }
+      else{
+        printf("%s: not found\n", second_word);
+        continue;
+      }
+    }
     printf("%s: command not found\n", command);
   }
   return 0;
