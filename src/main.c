@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
 
   char command[1024];
   fgets(command, sizeof(command), stdin);
-  printf("$ %s: command not found", command);
+  printf("%s: command not found", command);
 
   return 0;
 }
