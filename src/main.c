@@ -6,8 +6,8 @@ int main(int argc, char *argv[]) {
   setbuf(stdout, NULL);
 
   char command[1024];
-  fget(command, sizeof(command), stdin);
-  printf("$ %s: command not found", command)
+  fgets(command, sizeof(command), stdin);
+  printf("$ %s: command not found", command);
 
   return 0;
 }
