@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
           char full_path[1024];
           snprintf(full_path, sizeof(full_path), "%s/%s", dir, second_word);
           if (access(full_path, X_OK) == 0){
-            printf("%s is %s", second_word, full_path);
+            printf("%s is %s\n", second_word, full_path);
             found = 1;
             break;
           }
