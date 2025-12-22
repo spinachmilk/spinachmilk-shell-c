@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
   // Flush after every printf
@@ -18,30 +19,37 @@ int main(int argc, char *argv[]) {
     }
     // echo logic
     char *first_word = strtok(command_copy, " ");
-    char *rest_of_string = first_word + strlen(first_word) + 1;
     if (strcmp(first_word, "echo") == 0){
+      char *rest_of_string = command + 5;
       printf("%s\n", rest_of_string);
       continue;
     }
     // type logic
     if (strcmp(first_word, "type") == 0){
       char *second_word = strtok(NULL, " ");
-      if (strcmp(second_word, "echo") == 0){
-        printf("echo is a shell builtin\n");
-        continue;
+      if (strcmp(second_word, "echo") == 0 || strcmp(second_word, "type") == 0 || strcmp(second_word, "exit") == 0){
+        printf("%s is a shell builtin\n", second_word);
+      } else{
+        char *path_env = getenv("PATH");
+        char *path_copy = strdup(path_env);
+        int found = 0;
+        char *dir = strtok(path_copy, ":");
+        while (dir != NULL){
+          char full_path[1024];
+          snprintf(full_path, sizeof(full_path), "%s/%s", dir, second_word);
+          if (access(full_path, X_OK) == 0){
+            printf("%s is %s", second_word, full_path);
+            found = 1;
+            break;
+          }
+          dir = strtok(NULL, ":");
+        }
+        if (!found){
+          printf("%s: not found\n", second_word);
+        }
+        free(path_copy);
       }
-      else if (strcmp(second_word, "exit") == 0){
-        printf("exit is a shell builtin\n");
-        continue;
-      }
-      else if (strcmp(second_word, "type") == 0){
-        printf("type is a shell builtin\n");
-        continue;
-      }
-      else{
-        printf("%s: not found\n", second_word);
-        continue;
-      }
+      continue;
     }
     printf("%s: command not found\n", command);
   }
