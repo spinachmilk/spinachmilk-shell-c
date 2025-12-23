@@ -29,18 +29,25 @@ int find_path(const char *command, char *out_path){
 int parse_args(char *input, char **args){
   int args_count = 0;
   char *p = input;
-  int in_quotes = 0;
+  int in_single_quotes = 0;
+  int in_double_quotes = 0;
+
   while (*p == ' ') p++;
   if (*p == '\0') return 0;
   args[args_count++] = p; // first argument starts here
 
   while (*p){
-    if(*p == '\''){
-      in_quotes = !in_quotes;
+    if((*p == '\'') && !in_double_quotes){
+      in_single_quotes = !in_single_quotes;
       memmove(p, p + 1, strlen(p));
       continue;
     }
-    if (*p == ' ' && !in_quotes){
+    if ((*p == '\"') && !in_single_quotes){
+      in_double_quotes = !in_double_quotes;
+      memmove(p, p + 1, strlen(p));
+      continue;
+    }
+    if (*p == ' ' && !in_single_quotes && !in_double_quotes){
       *p = '\0'; // terminate current word
       p++;
       while (*p == ' ') p++;
@@ -58,7 +65,7 @@ int parse_args(char *input, char **args){
 int main(int argc, char *argv[]) {
   // Flush after every printf
   setbuf(stdout, NULL);
-  char command[1024];\
+  char command[1024];
   while (1){
     printf("$ ");
     fgets(command, sizeof(command), stdin);
