@@ -56,6 +56,20 @@ int parse_args(char *input, char **args){
       }
       continue;
     }
+    if (*p == '\\' && !in_single_quotes){
+      char next = *(p+1);
+      if (in_double_quotes){
+        if (next == '\\'){
+          memmove(p, p+1, strlen(p));
+          p++;
+          continue;
+        }
+      } else{
+        memmove(p, p+1, strlen(p));
+        p++;
+        continue;
+      }
+    }
     p++;
   }
   args[args_count] = NULL;
