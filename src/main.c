@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     // echo logic
     if (strcmp(args[0], "echo") == 0){
       for (int i = 1; i<arg_count; i++){
-        printf("%s", args[i]);
+        printf("%s ", args[i]);
       }
       printf("\n");
       continue;
