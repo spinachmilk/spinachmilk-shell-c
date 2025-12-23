@@ -26,6 +26,35 @@ int find_path(const char *command, char *out_path){
   return 0;
 }
 
+int parse_args(char *input, char **args){
+  int args_count = 0;
+  char *p = input;
+  int in_quotes = 0;
+  while (*p == ' ') p++;
+  if (*p == '\0') return 0;
+  args[args_count++] = p; // first argument starts here
+
+  while (*p){
+    if(*p == '\''){
+      in_quotes = !in_quotes;
+      memmove(p, p + 1, strlen(p));
+      continue;
+    }
+    if (*p == ' ' && !in_quotes){
+      *p = '\0'; // terminate current word
+      p++;
+      while (*p == ' ') p++;
+      if (*p != '\0'){
+        args[args_count++] = p;
+      }
+      continue;
+    }
+    p++;
+  }
+  args[args_count] = NULL;
+  return args_count;
+}
+
 int main(int argc, char *argv[]) {
   // Flush after every printf
   setbuf(stdout, NULL);
@@ -36,14 +65,8 @@ int main(int argc, char *argv[]) {
     command[strcspn(command, "\n")] = '\0';
     
     char *args[128];
-    int arg_count = 0;
-    char *token = strtok(command, " ");
-    while (token != NULL && arg_count < 127){
-      args[arg_count++] = token;
-      token = strtok(NULL, " ");
-    }
-    args[arg_count] = NULL;
-    if (arg_count == 0) continue;
+    int args_count = parse_args(command, args);
+    if (args_count == 0) continue;
     const char *cmd = args[0];
 
     // exit logic
@@ -53,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     // echo logic
     if (strcmp(cmd, "echo") == 0){
-      for (int i = 1; i<arg_count; i++){
+      for (int i = 1; i<args_count; i++){
         printf("%s ", args[i]);
       }
       printf("\n");
@@ -71,7 +94,7 @@ int main(int argc, char *argv[]) {
 
     // cd logic
     if (strcmp(cmd, "cd") == 0){
-      if ((arg_count == 1) || (strcmp(args[1], "~") == 0)){
+      if ((args_count == 1) || (strcmp(args[1], "~") == 0)){
         char *home = getenv("HOME");
         if (home) chdir(home);
       } else {
