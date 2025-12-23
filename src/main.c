@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
         char *dir = strtok(path_copy, ":");
         while (dir != NULL){
           char full_path[1024];
-          snprintf(full_path, sizeof(full_path), "%s/%s", dir, args[1]);
+          snprintf(full_path, sizeof(full_path), "%s/%s", dir, args[0]);
           if (access(full_path, X_OK) == 0){
             printf("%s is %s\n", args[1], full_path);
             found = 1;
