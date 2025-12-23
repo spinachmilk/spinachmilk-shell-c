@@ -59,7 +59,7 @@ int parse_args(char *input, char **args){
     if (*p == '\\' && !in_single_quotes){
       char next = *(p+1);
       if (in_double_quotes){
-        if (next == '\\'){
+        if (next == '\\' || next == '\n' || next == '$' || next == '\"' || next == '`'){
           memmove(p, p+1, strlen(p));
           p++;
           continue;
