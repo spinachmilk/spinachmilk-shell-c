@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
     // cd logic
     if (strcmp(cmd, "cd") == 0){
-      if (arg_count == 1){
+      if ((arg_count == 1) || (strcmp(args[1], "~") == 0)){
         char *home = getenv("HOME");
         if (home) chdir(home);
       } else {
