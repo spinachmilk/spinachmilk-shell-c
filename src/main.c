@@ -4,94 +4,89 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+int find_path(const char *command, char *out_path){
+  char *path_env = getenv("PATH");
+  if (!path_env) return 0;
+
+  char *path_copy = strdup(path_env);
+  char *dir = strtok(path_copy, ":");
+  while (dir != NULL){
+    snprintf(out_path, 1024, "%s/%s", dir, command);
+    if(access(out_path, X_OK) == 0){
+      char full_path[1024];
+      if (realpath(out_path, full_path)){
+        strcpy(out_path, full_path);
+      }
+      free(path_copy);
+      return 1;
+    }
+    dir = strtok(NULL, ":");
+  }
+  free(path_copy);
+  return 0;
+}
+
 int main(int argc, char *argv[]) {
   // Flush after every printf
   setbuf(stdout, NULL);
-  char command[1024];
-  char command_copy[1024];
+  char command[1024];\
   while (1){
     printf("$ ");
     fgets(command, sizeof(command), stdin);
     command[strcspn(command, "\n")] = '\0';
-    strcpy(command_copy, command);
+    
     char *args[128];
     int arg_count = 0;
-    char *token = strtok(command_copy, " ");
+    char *token = strtok(command, " ");
     while (token != NULL && arg_count < 127){
       args[arg_count++] = token;
       token = strtok(NULL, " ");
     }
     args[arg_count] = NULL;
+    if (arg_count == 0) continue;
+    const char *cmd = args[0];
+
     // exit logic
-    if (strcmp(args[0], "exit") == 0){
+    if (strcmp(cmd, "exit") == 0){
       break;
     }
+
     // echo logic
-    if (strcmp(args[0], "echo") == 0){
+    if (strcmp(cmd, "echo") == 0){
       for (int i = 1; i<arg_count; i++){
         printf("%s ", args[i]);
       }
       printf("\n");
       continue;
     }
+
     // type logic
     if (strcmp(args[0], "type") == 0){
-      if (strcmp(args[1], "echo") == 0 || strcmp(args[1], "type") == 0 || strcmp(args[1], "exit") == 0){
+      const char *target = args[1];
+      if (!target) continue;
+      if (strcmp(target, "echo") == 0 || strcmp(target, "type") == 0 || strcmp(target, "exit") == 0){
         printf("%s is a shell builtin\n", args[1]);
       } else{
-        char *path_env = getenv("PATH");
-        if (!path_env){
-          continue;
+        char found_path[1024];
+        if (find_path(target, found_path)){
+          printf("%s is %s\n", target, found_path);
+        } else {
+          printf("%s: not found\n", target);
         }
-        char *path_copy = strdup(path_env);
-        int found = 0;
-        char *dir = strtok(path_copy, ":");
-        while (dir != NULL){
-          char full_path[1024];
-          char actual_path[1024];
-          snprintf(full_path, sizeof(full_path), "%s/%s", dir, args[1]);
-          if (access(full_path, X_OK) == 0){
-            realpath(full_path, actual_path);
-            printf("%s is %s\n", args[1], actual_path);
-            found = 1;
-            break;
-          }
-          dir = strtok(NULL, ":");
-        }
-        if (!found){
-          printf("%s: not found\n", args[1]);
-        }
-        free(path_copy);
       }
-      continue;
-    }
-    char *path_env = getenv("PATH");
-    char *path_copy = strdup(path_env);
-    char *dir = strtok(path_copy, ":");
-    int found = 0;
-
-    while (dir != NULL) {
-        char full_path[1024];
-        snprintf(full_path, sizeof(full_path), "%s/%s", dir, args[0]);
-
-        if (access(full_path, X_OK) == 0) {
-            found = 1;
-            pid_t pid = fork();
-            if (pid == 0) {
-                execv(full_path, args);
-                exit(1); 
-            } else {
-                wait(NULL);
-            }
-            break;
+    } else{
+      char exec_path[1024];
+      if(find_path(cmd, exec_path)){
+        if (fork() == 0){
+          execv(exec_path, args);
+          exit(1);
+        } else {
+          wait(NULL);
         }
-        dir = strtok(NULL, ":");
-    }
-    free(path_copy);
-
-    if (!found) {
-        printf("%s: command not found\n", args[0]);
-    }
+      } else {
+        printf("%s: command not found\n", cmd);
+      }
+    } 
   }
   return 0;
 }
