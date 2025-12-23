@@ -60,11 +60,20 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
+    // pwd logic
+    if (strcmp(cmd, "pwd") == 0){
+      char cwd[1024];
+      if (getcwd(cwd, sizeof(cwd)) != NULL){
+        printf("%s\n", cwd);
+      }
+      continue;
+    }
+
     // type logic
     if (strcmp(args[0], "type") == 0){
       const char *target = args[1];
       if (!target) continue;
-      if (strcmp(target, "echo") == 0 || strcmp(target, "type") == 0 || strcmp(target, "exit") == 0){
+      if (strcmp(target, "echo") == 0 || strcmp(target, "type") == 0 || strcmp(target, "exit") == 0 || strcmp(target, "pwd") == 0){
         printf("%s is a shell builtin\n", args[1]);
       } else{
         char found_path[1024];
@@ -86,7 +95,7 @@ int main(int argc, char *argv[]) {
       } else {
         printf("%s: command not found\n", cmd);
       }
-    } 
+    }
   }
   return 0;
 }
