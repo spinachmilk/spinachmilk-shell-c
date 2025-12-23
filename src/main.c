@@ -49,15 +49,6 @@ int main(int argc, char *argv[]) {
           if (access(full_path, X_OK) == 0){
             printf("%s is %s\n", args[1], full_path);
             found = 1;
-            // Run external programs
-            pid_t pid = fork();
-            if (pid == 0){
-              execv(full_path, args);
-              exit(1);
-            } else{
-              wait(NULL);
-            }
-            break;
           }
           dir = strtok(NULL, ":");
         }
@@ -68,7 +59,33 @@ int main(int argc, char *argv[]) {
       }
       continue;
     }
-    printf("%s: command not found\n", command);
+    char *path_env = getenv("PATH");
+    char *path_copy = strdup(path_env);
+    char *dir = strtok(path_copy, ":");
+    int found = 0;
+
+    while (dir != NULL) {
+        char full_path[1024];
+        snprintf(full_path, sizeof(full_path), "%s/%s", dir, args[0]);
+
+        if (access(full_path, X_OK) == 0) {
+            found = 1;
+            pid_t pid = fork();
+            if (pid == 0) {
+                execv(full_path, args);
+                exit(1); 
+            } else {
+                wait(NULL);
+            }
+            break;
+        }
+        dir = strtok(NULL, ":");
+    }
+    free(path_copy);
+
+    if (!found) {
+        printf("%s: command not found\n", args[0]);
+    }
   }
   return 0;
 }
