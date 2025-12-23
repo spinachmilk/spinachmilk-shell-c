@@ -69,6 +69,19 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
+    // cd logic
+    if (strcmp(cmd, "cd") == 0){
+      if (arg_count == 1){
+        char *home = getenv("HOME");
+        if (home) chdir(home);
+      } else {
+        if (chdir(args[1]) != 0){
+          printf("cd: %s: No such file or directory\n", args[1]);
+        }
+      }
+      continue;
+    }
+
     // type logic
     if (strcmp(args[0], "type") == 0){
       const char *target = args[1];
