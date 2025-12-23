@@ -40,15 +40,21 @@ int main(int argc, char *argv[]) {
         printf("%s is a shell builtin\n", args[1]);
       } else{
         char *path_env = getenv("PATH");
+        if (!path_env){
+          continue;
+        }
         char *path_copy = strdup(path_env);
         int found = 0;
         char *dir = strtok(path_copy, ":");
         while (dir != NULL){
           char full_path[1024];
-          snprintf(full_path, sizeof(full_path), "%s/%s", dir, args[0]);
+          char actual_path[1024];
+          snprintf(full_path, sizeof(full_path), "%s/%s", dir, args[1]);
           if (access(full_path, X_OK) == 0){
-            printf("%s is %s\n", args[1], full_path);
+            realpath(full_path, actual_path);
+            printf("%s is %s\n", args[1], actual_path);
             found = 1;
+            break;
           }
           dir = strtok(NULL, ":");
         }
