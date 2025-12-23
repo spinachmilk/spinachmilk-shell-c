@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 int main(int argc, char *argv[]) {
   // Flush after every printf
@@ -40,6 +41,15 @@ int main(int argc, char *argv[]) {
           if (access(full_path, X_OK) == 0){
             printf("%s is %s\n", second_word, full_path);
             found = 1;
+            // Run external programs
+            pid_t pid = fork();
+            if (pid == 0){
+              char *args[] = {full_path, NULL};
+              execv(full_path, args);
+              exit(1);
+            } else{
+              wait(NULL);
+            }
             break;
           }
           dir = strtok(NULL, ":");
