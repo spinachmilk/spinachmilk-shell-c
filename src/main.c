@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 int find_path(const char *command, char *out_path){
   char *path_env = getenv("PATH");
@@ -88,6 +89,29 @@ int main(int argc, char *argv[]) {
     char *args[128];
     int args_count = parse_args(command, args);
     if (args_count == 0) continue;
+    // check for '>' operator
+    int redirect_idx = -1;
+    for (int i =0; args[i] != NULL; i++){
+      if((strcmp(args[i], ">") == 0) || (strcmp(args[i], "1>") == 0)){
+        redirect_idx = i;
+        break;
+      }
+    }
+    int saved_stdout = -1;
+    if (redirect_idx != -1){
+      char *filename = args[redirect_idx + 1];
+      if (filename == NULL){
+        continue;
+      }
+      int fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+      if (fd < 0){
+        continue;
+      }
+      saved_stdout = dup(1);
+      dup2(fd, 1);
+      close(fd);
+      args[redirect_idx] = NULL;
+    }
     const char *cmd = args[0];
 
     // exit logic
@@ -97,10 +121,15 @@ int main(int argc, char *argv[]) {
 
     // echo logic
     if (strcmp(cmd, "echo") == 0){
-      for (int i = 1; i<args_count; i++){
+      for (int i = 1; args[i] != NULL; i++){
         printf("%s ", args[i]);
       }
       printf("\n");
+      if (saved_stdout != -1){
+        dup2(saved_stdout, 1);
+        close(saved_stdout);
+        saved_stdout = -1;
+      }
       continue;
     }
 
@@ -109,6 +138,11 @@ int main(int argc, char *argv[]) {
       char cwd[1024];
       if (getcwd(cwd, sizeof(cwd)) != NULL){
         printf("%s\n", cwd);
+      }
+      if (saved_stdout != -1){
+        dup2(saved_stdout, 1);
+        close(saved_stdout);
+        saved_stdout = -1;
       }
       continue;
     }
@@ -122,6 +156,11 @@ int main(int argc, char *argv[]) {
         if (chdir(args[1]) != 0){
           printf("cd: %s: No such file or directory\n", args[1]);
         }
+      }
+      if (saved_stdout != -1){
+        dup2(saved_stdout, 1);
+        close(saved_stdout);
+        saved_stdout = -1;
       }
       continue;
     }
@@ -140,6 +179,11 @@ int main(int argc, char *argv[]) {
           printf("%s: not found\n", target);
         }
       }
+      if (saved_stdout != -1){
+        dup2(saved_stdout, 1);
+        close(saved_stdout);
+        saved_stdout = -1;
+      }
     } else{
       char exec_path[1024];
       if(find_path(cmd, exec_path)){
@@ -151,6 +195,11 @@ int main(int argc, char *argv[]) {
         }
       } else {
         printf("%s: command not found\n", cmd);
+      }
+      if (saved_stdout != -1){
+        dup2(saved_stdout, 1);
+        close(saved_stdout);
+        saved_stdout = -1;
       }
     }
   }
