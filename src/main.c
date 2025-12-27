@@ -92,12 +92,19 @@ int main(int argc, char *argv[]) {
     // check for '>' operator
     int redirect_stdout_idx = -1;
     int redirect_stderr_idx = -1;
+    int stdout_flags = O_TRUNC;
+    int stderr_flags = O_TRUNC;
     for (int i =0; args[i] != NULL; i++){
       if((strcmp(args[i], ">") == 0) || (strcmp(args[i], "1>") == 0)){
         redirect_stdout_idx = i;
+        stdout_flags = O_TRUNC;
         break;
       } else if (strcmp(args[i], "2>") == 0){
         redirect_stderr_idx = i;
+        break;
+      } else if (strcmp(args[i], ">>") == 0 || strcmp(args[i], "1>>") == 0){
+        redirect_stdout_idx = i;
+        stdout_flags = O_APPEND;
         break;
       }
     }
@@ -109,7 +116,7 @@ int main(int argc, char *argv[]) {
       if (filename == NULL){
         continue;
       }
-      int fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+      int fd = open(filename, O_WRONLY | O_CREAT | stdout_flags, 0644);
       if (fd < 0){
         continue;
       }
@@ -124,7 +131,7 @@ int main(int argc, char *argv[]) {
       if (filename == NULL){
         continue;
       }
-      int fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+      int fd = open(filename, O_WRONLY | O_CREAT | stderr_flags, 0644);
       if (fd < 0){
         continue;
       }
