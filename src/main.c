@@ -101,12 +101,17 @@ int main(int argc, char *argv[]) {
         break;
       } else if (strcmp(args[i], "2>") == 0){
         redirect_stderr_idx = i;
+        stderr_flags = O_TRUNC;
         break;
       } else if (strcmp(args[i], ">>") == 0 || strcmp(args[i], "1>>") == 0){
         redirect_stdout_idx = i;
         stdout_flags = O_APPEND;
         break;
-      }
+      } else if (strcmp(args[i], "2>>") == 0){
+        redirect_stderr_idx = i;
+        stderr_flags = O_APPEND;
+        break;
+      } 
     }
     int saved_stdout = -1;
     int saved_stderr = -1;
