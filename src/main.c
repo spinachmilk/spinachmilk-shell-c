@@ -6,20 +6,40 @@
 #include <fcntl.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <dirent.h>
 
+const char *builtins[] = {"echo", "exit", "type", "pwd", "cd", NULL};
 char *command_generator(const char *text, int state){
-  static int list_index, len;
-  char *name;
-  const char *builtins[] = {"exit", "echo", "type", "pwd", "cd", NULL};
+  static int idx, len;
+  static char *path_mem = NULL, *dir = NULL;
+  static DIR *dp = NULL;
+  struct dirent *entry;
 
   if (!state){
-    list_index = 0;
+    idx = 0;
     len = strlen(text);
+    if (path_mem) free(path_mem);
+    path_mem = strdup(getenv("PATH"));
+    dir = strtok(path_mem, ":");
+    dp = NULL;
   }
-  while((name = (char*)builtins[list_index++])){
-    if(strncmp(name, text, len) == 0){
-      return strdup(name);
+  while (builtins[idx]){
+    char *b = (char*) builtins[idx++];
+    if(!strncmp(text, b, len)) return strdup(b);
+  }
+  while (dp || dir){
+    if (!dp && !(dp = opendir(dir))){
+      dir = strtok(NULL, ":");
+      continue;
     }
+    while ((entry = readdir(dp))){
+      if(entry -> d_name[0] != '.' && !strncmp(entry -> d_name, text, len)){
+        return strdup(entry->d_name);
+      }
+    }
+    closedir(dp);
+    dp = NULL;
+    dir = strtok(NULL, ":");
   }
   return NULL;
 }
