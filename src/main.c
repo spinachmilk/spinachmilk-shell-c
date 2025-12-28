@@ -4,6 +4,32 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
+char *command_generator(const char *text, int state){
+  static int list_index, len;
+  char *name;
+  const char *builtins[] = {"exit", "echo", "type", "pwd", "cd", NULL};
+
+  if (!state){
+    list_index = 0;
+    len = strlen(text);
+  }
+  while((name = (char*)builtins[list_index++])){
+    if(strncmp(name, text, len) == 0){
+      return strdup(name);
+    }
+  }
+  return NULL;
+}
+
+char **shell_completion(const char *text, int start, int end){
+  if(start == 0){
+    return rl_completion_matches(text, command_generator);
+  }
+  return NULL;
+}
 
 int find_path(const char *command, char *out_path){
   char *path_env = getenv("PATH");
@@ -80,15 +106,19 @@ int parse_args(char *input, char **args){
 int main(int argc, char *argv[]) {
   // Flush after every printf
   setbuf(stdout, NULL);
-  char command[1024];
-  while (1){
-    printf("$ ");
-    fgets(command, sizeof(command), stdin);
-    command[strcspn(command, "\n")] = '\0';
+  rl_attempted_completion_function = shell_completion;
+  char *input_buf;
+  while ((input_buf = readline("$ ")) != NULL){
+    if (strlen(input_buf) > 0){
+      add_history(input_buf);
+    }
     
     char *args[128];
-    int args_count = parse_args(command, args);
-    if (args_count == 0) continue;
+    int args_count = parse_args(input_buf, args);
+    if (args_count == 0){
+      free(input_buf);
+      continue;
+    }
     // check for '>' operator
     int redirect_stdout_idx = -1;
     int redirect_stderr_idx = -1;
@@ -98,19 +128,15 @@ int main(int argc, char *argv[]) {
       if((strcmp(args[i], ">") == 0) || (strcmp(args[i], "1>") == 0)){
         redirect_stdout_idx = i;
         stdout_flags = O_TRUNC;
-        break;
       } else if (strcmp(args[i], "2>") == 0){
         redirect_stderr_idx = i;
         stderr_flags = O_TRUNC;
-        break;
       } else if (strcmp(args[i], ">>") == 0 || strcmp(args[i], "1>>") == 0){
         redirect_stdout_idx = i;
         stdout_flags = O_APPEND;
-        break;
       } else if (strcmp(args[i], "2>>") == 0){
         redirect_stderr_idx = i;
         stderr_flags = O_APPEND;
-        break;
       } 
     }
     int saved_stdout = -1;
@@ -211,18 +237,19 @@ int main(int argc, char *argv[]) {
       } else {
         printf("%s: command not found\n", cmd);
       }
-      cleanup:
-      if (saved_stdout != -1){
-        dup2(saved_stdout, 1);
-        close(saved_stdout);
-        saved_stdout = -1;
-      }
-      if (saved_stderr != -1){
-        dup2(saved_stderr, 2);
-        close(saved_stderr);
-        saved_stderr = -1;
-      }
     }
+    cleanup:
+    if (saved_stdout != -1){
+      dup2(saved_stdout, 1);
+      close(saved_stdout);
+      saved_stdout = -1;
+    }
+    if (saved_stderr != -1){
+      dup2(saved_stderr, 2);
+      close(saved_stderr);
+      saved_stderr = -1;
+    }
+    free(input_buf);
   }
   return 0;
 }
